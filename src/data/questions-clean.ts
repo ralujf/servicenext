@@ -885,7 +885,6 @@ ServiceNow Context:
       'Use before(), after(), and equals() for date comparisons'
     ]
   },
-
   {
     id: 'sn-glidedatetime-1',
     title: 'SLA Time Calculations',

@@ -1,8 +1,8 @@
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Question } from '../data/questions';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface TagFilterBarProps {
   questions: Question[];
@@ -14,11 +14,28 @@ interface TagFilterBarProps {
 
 export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove, onClearAll }: TagFilterBarProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
-  // Add mouse wheel horizontal scrolling
+  // Get all unique tags from questions
+  const allTags = [...new Set(questions.flatMap(q => q.tags))].sort();
+
+  const checkArrows = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1); // 1px buffer
+    }
+  };
+
+  // Add mouse wheel horizontal scrolling and arrow logic
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
+
+    // Initial check for arrows
+    checkArrows();
 
     const handleWheel = (e: WheelEvent) => {
       // If scrolling vertically and container can scroll horizontally
@@ -66,6 +83,9 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('scroll', checkArrows);
+    window.addEventListener('resize', checkArrows);
+
 
     // Set initial cursor
     container.style.cursor = 'grab';
@@ -73,14 +93,20 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
     return () => {
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('mousedown', handleMouseDown);
-      container.removeEventListener('mouseleave', handleMouseLeave);
+      container.removeEventListener('mouseleave',handleMouseLeave);
       container.removeEventListener('mouseup', handleMouseUp);
       container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('scroll', checkArrows);
+      window.removeEventListener('resize', checkArrows);
     };
-  }, []);
+  }, [allTags]); // Re-run if tags change
 
-  // Get all unique tags from questions
-  const allTags = [...new Set(questions.flatMap(q => q.tags))].sort();
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -250 : 250;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const getTagColor = (tag: string) => {
     // Color coding for different tag types
@@ -139,7 +165,7 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
       'Parsing': 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-300 hover:bg-lime-200 dark:hover:bg-lime-800'
     };
 
-    return colors[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700';
+    return colors[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
   };
 
   const getSelectedTagColor = (tag: string) => {
@@ -177,8 +203,8 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
   }
 
   return (
-    <div className="space-y-3" style={{ fontFamily: 'Chivo, sans-serif' }}>
-      <div className="flex items-center justify-between">
+    <div className="py-4">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-foreground">Filter by Topics</h3>
         {selectedTags.length > 0 && (
           <Button
@@ -192,69 +218,59 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
           </Button>
         )}
       </div>
-
-      {/* Selected Tags */}
+      <div className="relative flex items-center">
+        {showLeftArrow && (
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-md"
+            onClick={() => scroll('left')}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
+        <div
+          ref={scrollContainerRef}
+          className="flex items-center space-x-2 overflow-x-auto py-2 scrollbar-hide"
+        >
+          {allTags.map(tag => (
+            <Badge
+              key={tag}
+              variant="default"
+              className={`cursor-pointer transition-colors ${getSelectedTagColor(tag)} text-xs`}
+              onClick={() => onTagRemove(tag)}
+            >
+              {tag}
+              <X className="ml-1 h-3 w-3" />
+            </Badge>
+          ))}
+        </div>
+        {showRightArrow && (
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-md"
+            onClick={() => scroll('right')}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
       {selectedTags.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Active filters:</p>
-          <div className="flex flex-wrap gap-2">
-            {selectedTags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="default"
-                className={`cursor-pointer transition-colors ${getSelectedTagColor(tag)} text-xs`}
-                onClick={() => onTagRemove(tag)}
-              >
-                {tag}
-                <X className="ml-1 h-3 w-3" />
-              </Badge>
-            ))}
-          </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {selectedTags.map((tag) => (
+            <Badge
+              key={tag}
+              variant="default"
+              className={`cursor-pointer transition-colors ${getSelectedTagColor(tag)} text-xs`}
+              onClick={() => onTagRemove(tag)}
+            >
+              {tag}
+              <X className="ml-1 h-3 w-3" />
+            </Badge>
+          ))}
         </div>
       )}
-
-      {/* Available Tags - Horizontal Scrollable */}
-      <div className="relative">
-        <div 
-          ref={scrollContainerRef}
-          className="overflow-x-auto scrollbar-hide select-none"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          <div className="flex gap-2 pb-2 min-w-max">
-            {allTags
-              .filter(tag => !selectedTags.includes(tag))
-              .map((tag) => {
-                // Count questions that have this tag
-                const questionCount = questions.filter(q => q.tags.includes(tag)).length;
-                
-                return (
-                  <Button
-                    key={tag}
-                    variant="outline"
-                    size="sm"
-                    className={`
-                      whitespace-nowrap transition-all duration-200 text-xs
-                      ${getTagColor(tag)}
-                      border-current hover:scale-105 hover:shadow-sm
-                      pointer-events-auto
-                    `}
-                    onClick={() => onTagSelect(tag)}
-                    onMouseDown={(e) => e.stopPropagation()} // Prevent drag when clicking buttons
-                    style={{ fontFamily: 'Chivo, sans-serif' }}
-                  >
-                    {tag}
-                    <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-black/10 dark:bg-white/20">
-                      {questionCount}
-                    </span>
-                  </Button>
-                );
-              })}
-          </div>
-        </div>
-        
-        {/* Gradient fade effect on right side */}
-        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-      </div>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { KeyboardEvent, useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { Textarea } from './ui/textarea';
 import { Console } from './Console';
 import { CommunityAnswers } from './CommunityAnswers';
 import { VotingButtons } from './VotingButtons';
@@ -18,6 +18,7 @@ import { votingService, QuestionVotes } from '../utils/votingService';
 import { submissionsService } from '../utils/submissionsService';
 import { getAccessToken } from '../utils/supabase/client';
 import { useAuth } from './AuthProvider';
+import { useTheme } from './ThemeProvider';
 import { CheckCircle, Circle, Users, Lightbulb, Eye, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +35,7 @@ interface QuestionDetailProps {
 
 export function QuestionDetail({ question, onQuestionComplete, userProgress, questions = [], onNavigateToQuestion, onBackToQuestions, bookmarkedQuestions = [], onBookmarkToggle }: QuestionDetailProps) {
   const { user } = useAuth();
+  const { actualTheme } = useTheme();
   const [code, setCode] = useState(question.starterCode);
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
@@ -248,144 +250,8 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
     setRevealedHints(prev => Math.min(prev + 1, safeQuestion.hints.length));
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const textarea = e.target as HTMLTextAreaElement;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-
-      if (e.shiftKey) {
-        // Handle Shift+Tab for de-indentation
-        const beforeCursor = code.substring(0, start);
-        const selectedText = code.substring(start, end);
-        const afterCursor = code.substring(end);
-
-        // Find the start of the current line
-        const lineStart = beforeCursor.lastIndexOf('\n') + 1;
-        const lineBeforeCursor = beforeCursor.substring(lineStart);
-        
-        // Check if the line starts with spaces or tab
-        if (lineBeforeCursor.startsWith('  ')) {
-          // Remove 2 spaces (our tab equivalent)
-          const newBeforeCursor = beforeCursor.substring(0, lineStart) + lineBeforeCursor.substring(2);
-          const newCode = newBeforeCursor + selectedText + afterCursor;
-          setCode(newCode);
-          
-          // Update cursor position
-          setTimeout(() => {
-            textarea.selectionStart = start - 2;
-            textarea.selectionEnd = end - 2;
-          }, 0);
-        } else if (lineBeforeCursor.startsWith('\t')) {
-          // Remove actual tab character
-          const newBeforeCursor = beforeCursor.substring(0, lineStart) + lineBeforeCursor.substring(1);
-          const newCode = newBeforeCursor + selectedText + afterCursor;
-          setCode(newCode);
-          
-          // Update cursor position
-          setTimeout(() => {
-            textarea.selectionStart = start - 1;
-            textarea.selectionEnd = end - 1;
-          }, 0);
-        }
-      } else {
-        // Handle regular Tab for indentation
-        const newCode = code.substring(0, start) + '  ' + code.substring(end);
-        setCode(newCode);
-        
-        // Update cursor position
-        setTimeout(() => {
-          textarea.selectionStart = start + 2;
-          textarea.selectionEnd = start + 2;
-        }, 0);
-      }
-    }
-  };
-
-  const handlePrettifyCode = () => {
-    const formatted = prettifyCode(code);
-    setCode(formatted);
-    toast.success('✨ Code formatted successfully!');
-  };
-
-  const prettifyCode = (code: string): string => {
-    const lines = code.split('\n');
-    const formatted: string[] = [];
-    let indentLevel = 0;
-    
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
-      
-      if (!line) {
-        formatted.push('');
-        continue;
-      }
-      
-      // Decrease indent for closing brackets/braces
-      if (line.startsWith('}') || line.startsWith(']') || line.startsWith(')')) {
-        indentLevel = Math.max(0, indentLevel - 1);
-      }
-      
-      // Apply current indentation
-      const indentedLine = '  '.repeat(indentLevel) + line;
-      formatted.push(indentedLine);
-      
-      // Increase indent for opening brackets/braces
-      if (line.endsWith('{') || line.endsWith('[') || line.endsWith('(')) {
-        indentLevel++;
-      }
-      
-      // Handle if/else/for/while statements without braces
-      if (
-        (line.startsWith('if ') || line.startsWith('else ') || 
-         line.startsWith('for ') || line.startsWith('while ') ||
-         line.startsWith('function ') || line.startsWith('var ') ||
-         line.startsWith('let ') || line.startsWith('const ')) &&
-        !line.endsWith('{') && !line.endsWith(';')
-      ) {
-        // Check if next line is not indented and not empty
-        const nextLine = lines[i + 1];
-        if (nextLine && nextLine.trim() && !nextLine.startsWith('  ') && !nextLine.startsWith('\t')) {
-          indentLevel++;
-        }
-      }
-      
-      // Reset indent after single-line statements
-      if (line.endsWith(';') && indentLevel > 0) {
-        const nextLine = lines[i + 1];
-        if (nextLine && nextLine.trim() && 
-            !nextLine.trim().startsWith('else') && 
-            !nextLine.trim().startsWith('}')) {
-          // Check if we should decrease indent for single statements
-          const prevNonEmpty = formatted[formatted.length - 2];
-          if (prevNonEmpty && 
-              (prevNonEmpty.trim().startsWith('if ') || 
-               prevNonEmpty.trim().startsWith('for ') || 
-               prevNonEmpty.trim().startsWith('while '))) {
-            indentLevel = Math.max(0, indentLevel - 1);
-          }
-        }
-      }
-    }
-    
-    // Clean up multiple empty lines
-    const cleanedFormatted: string[] = [];
-    let consecutiveEmpty = 0;
-    
-    for (const line of formatted) {
-      if (line.trim() === '') {
-        consecutiveEmpty++;
-        if (consecutiveEmpty <= 1) {
-          cleanedFormatted.push(line);
-        }
-      } else {
-        consecutiveEmpty = 0;
-        cleanedFormatted.push(line);
-      }
-    }
-    
-    return cleanedFormatted.join('\n');
+  const handleEditorChange = (value: string | undefined) => {
+    setCode(value || '');
   };
 
   const totalHints = safeQuestion.hints.length;
@@ -726,16 +592,6 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
                   <CardTitle style={{ fontFamily: 'Chivo, sans-serif' }}>Code Editor</CardTitle>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrettifyCode}
-                      className="flex items-center gap-2"
-                      style={{ fontFamily: 'Chivo, sans-serif' }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      Format
-                    </Button>
-                    <Button
                       onClick={handleRunCode}
                       disabled={isRunning}
                       className="flex items-center gap-2"
@@ -778,14 +634,25 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <Textarea
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="min-h-96 font-mono text-sm bg-muted/50 border-2 focus:border-primary/50 transition-colors"
-                  placeholder="Write your solution here..."
-                  style={{ fontFamily: 'Chivo, monospace' }}
-                />
+                <div className="border-2 rounded-md overflow-hidden border-muted-foreground/20 focus-within:border-primary/50 transition-colors">
+                  <Editor
+                    height="400px"
+                    language="javascript"
+                    theme={actualTheme === 'dark' ? 'vs-dark' : 'light'}
+                    value={code}
+                    onChange={handleEditorChange}
+                    options={{
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      contextmenu: true,
+                      scrollbar: {
+                        verticalScrollbarSize: 10,
+                        horizontalScrollbarSize: 10,
+                      },
+                      fontFamily: 'Chivo, monospace',
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
 

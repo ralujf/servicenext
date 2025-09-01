@@ -149,13 +149,24 @@ function AppContent() {
     setIsShowingBookmarked(false);
     // Clear selected question when changing category
     setSelectedQuestion(null);
+    // If a category filter is applied, switch to the practice tab
+    if (category && currentTab !== 'practice') {
+      setCurrentTab('practice');
+      navigateToView('practice');
+    }
   };
 
   const handleSelectBookmarked = () => {
     console.log('Bookmarked filter toggled, current state:', isShowingBookmarked);
-    setIsShowingBookmarked(!isShowingBookmarked);
+    const newIsShowingBookmarked = !isShowingBookmarked;
+    setIsShowingBookmarked(newIsShowingBookmarked);
     setSelectedCategory(null);
     setSelectedQuestion(null);
+    // If the bookmarked filter is activated, switch to the practice tab
+    if (newIsShowingBookmarked && currentTab !== 'practice') {
+      setCurrentTab('practice');
+      navigateToView('practice');
+    }
   };
 
   const handleBookmarkToggle = async (questionId: string, isBookmarked: boolean) => {
@@ -295,16 +306,6 @@ function AppContent() {
               <div>
                 <h2 className="text-2xl font-semibold mb-4" style={{ fontFamily: 'Chivo, sans-serif' }}>
                   Choose a Question to Practice
-                  {selectedCategory && (
-                    <span className="text-lg font-normal text-muted-foreground ml-2">
-                      in {selectedCategory}
-                    </span>
-                  )}
-                  {isShowingBookmarked && (
-                    <span className="text-lg font-normal text-muted-foreground ml-2">
-                      - Bookmarked Questions
-                    </span>
-                  )}
                 </h2>
                 <QuestionBrowser 
                   questions={filteredQuestions}

@@ -80,8 +80,6 @@ export function QuestionBrowser({ questions, onSelectQuestion, userProgress, boo
     return userProgress?.completedQuestions.includes(questionId) || false;
   };
 
-
-
   // Tag filter handlers
   const handleTagSelect = (tag: string) => {
     setSelectedTags(prev => [...prev, tag]);
@@ -163,15 +161,6 @@ export function QuestionBrowser({ questions, onSelectQuestion, userProgress, boo
         </Card>
       )}
 
-      {/* Tag Filter Bar */}
-      <TagFilterBar
-        questions={displayQuestions}
-        selectedTags={selectedTags}
-        onTagSelect={handleTagSelect}
-        onTagRemove={handleTagRemove}
-        onClearAll={handleTagClearAll}
-      />
-
       {/* Traditional Filters */}
       <Card>
         <CardHeader>
@@ -247,6 +236,15 @@ export function QuestionBrowser({ questions, onSelectQuestion, userProgress, boo
         </CardContent>
       </Card>
 
+        {/* Tag Filter Bar */}
+      <TagFilterBar
+        questions={displayQuestions}
+        selectedTags={selectedTags}
+        onTagSelect={handleTagSelect}
+        onTagRemove={handleTagRemove}
+        onClearAll={handleTagClearAll}
+      />
+
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground" style={{ fontFamily: 'Chivo, sans-serif' }}>
@@ -319,9 +317,7 @@ export function QuestionBrowser({ questions, onSelectQuestion, userProgress, boo
                         </Badge>
                         {completed ? (
                           <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground" />
-                        )}
+                        ) : null}
                       </div>
 
                     </div>

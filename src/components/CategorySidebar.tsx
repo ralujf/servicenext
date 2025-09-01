@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Question } from '../data/questions';
 import { useAuth } from './AuthProvider';
-import { Code, Server, Filter, ChevronLeft, ChevronRight, Menu, Bookmark } from 'lucide-react';
+import { Code, Server, ChartColumnStacked, Filter, ChevronLeft, ChevronRight, Menu, Bookmark } from 'lucide-react';
 
 interface CategorySidebarProps {
   questions: Question[];
@@ -67,7 +67,7 @@ export function StandaloneCategorySidebar({
         {isCollapsed ? (
           /* Collapsed layout - single column with centered items */
           <div className="flex flex-col items-center gap-3">
-            <Filter className="w-5 h-5 text-primary flex-shrink-0" />
+            <ChartColumnStacked className="w-5 h-5 text-primary flex-shrink-0" />
             {onToggleCollapse && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -91,7 +91,7 @@ export function StandaloneCategorySidebar({
           <>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-primary flex-shrink-0" />
+                <ChartColumnStacked className="w-5 h-5 text-primary flex-shrink-0" />
                 <h2 className="font-semibold text-sidebar-foreground">Categories</h2>
               </div>
               {onToggleCollapse && (

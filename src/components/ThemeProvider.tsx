@@ -30,7 +30,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = 'light',
   storageKey = 'servicenow-practice-theme',
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
