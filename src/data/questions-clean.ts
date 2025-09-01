@@ -1959,4 +1959,753 @@ Set Operations Use Cases:
       'Support both property names and functions for comparison'
     ]
   }
+  ,
+  // ----------------------------------------------------------------
+  // MEDIUM QUESTIONS
+  // ----------------------------------------------------------------
+  {
+    id: 'sn-glideform-medium-1',
+    title: 'Dynamic Field Visibility with GlideForm',
+    description: `Create a client script that dynamically shows or hides the 'justification' field on a change request form. The 'justification' field should only be visible when the 'risk' level is set to 'High'.
+
+Requirements:
+- Use the GlideForm (g_form) API.
+- The script should trigger when the 'risk' field changes.
+- If risk is 'High', show the 'justification' field.
+- If risk is any other value, hide the 'justification' field.
+- The 'justification' field should also be mandatory when it is visible.
+
+ServiceNow Context:
+- This would be an 'onChange' client script on the 'change_request' table.
+- Use g_form.getValue('risk') to get the current risk value.
+- Use g_form.setVisible('justification', true/false) to control visibility.
+- Use g_form.setMandatory('justification', true/false) to control the mandatory state.`,
+    difficulty: 'Medium',
+    category: 'Client Side Scripts',
+    tags: ['GlideForm', 'Client Script', 'UI Controls'],
+    starterCode: `function onChange(control, oldValue, newValue, isLoading, isTemplate) {
+  if (isLoading || newValue === '') {
+    return;
+  }
+
+  // Complete the function logic here
+  // const g_form = /* Assume g_form is available */
+  
+}`,
+    solution: `function onChange(control, oldValue, newValue, isLoading, isTemplate) {
+  if (isLoading || newValue === '') {
+    return;
+  }
+
+  const riskValue = g_form.getValue('risk');
+  
+  if (riskValue === 'High') {
+    g_form.setVisible('justification', true);
+    g_form.setMandatory('justification', true);
+  } else {
+    g_form.setVisible('justification', false);
+    g_form.setMandatory('justification', false);
+  }
+}`,
+    testCases: [
+      {
+        input: { risk: 'High' },
+        expected: { justificationVisible: true, justificationMandatory: true },
+        description: 'Should show and make justification mandatory for High risk'
+      },
+      {
+        input: { risk: 'Medium' },
+        expected: { justificationVisible: false, justificationMandatory: false },
+        description: 'Should hide and make justification non-mandatory for Medium risk'
+      },
+      {
+        input: { risk: 'Low' },
+        expected: { justificationVisible: false, justificationMandatory: false },
+        description: 'Should hide and make justification non-mandatory for Low risk'
+      }
+    ],
+    hints: [
+      'Remember that g_form is the standard object for client-side form manipulation.',
+      'Ensure you handle both showing/hiding and setting/removing the mandatory flag.',
+      'The function signature is for an onChange client script.'
+    ]
+  },
+  {
+    id: 'sn-glidemodal-medium-1',
+    title: 'Display User Details in GlideModal',
+    description: `Create a UI Action that opens a modal dialog to show details of the assigned user on an incident form.
+
+Requirements:
+- The UI Action should be a client-side script.
+- Use GlideModal to create and render the dialog.
+- The modal should have the title "User Details".
+- Inside the modal, display the user's name, email, and phone number.
+- Provide a button to close the modal.
+
+ServiceNow Context:
+- This would be a client-side UI Action on the 'incident' table.
+- Use g_form.getReference('assigned_to', callback) to fetch user details asynchronously.
+- The callback function will receive the user record.
+- Use GlideModal to render a new window with custom content.`,
+    difficulty: 'Medium',
+    category: 'Client Side Scripts',
+    tags: ['GlideModal', 'UI Action', 'GlideForm', 'Client Script'],
+    starterCode: `function showUserDetails() {
+  const assignedToSysId = g_form.getValue('assigned_to');
+  if (!assignedToSysId) {
+    g_form.addInfoMessage('No user is assigned.');
+    return;
+  }
+
+  // Complete the function to open a GlideModal
+  
+}`,
+    solution: `function showUserDetails() {
+  const assignedToSysId = g_form.getValue('assigned_to');
+  if (!assignedToSysId) {
+    g_form.addInfoMessage('No user is assigned.');
+    return;
+  }
+
+  g_form.getReference('assigned_to', (user) => {
+    if (user) {
+      const gm = new GlideModal();
+      gm.setTitle('User Details');
+      
+      const body = \`<div>
+        <p><strong>Name:</strong> \${user.name}</p>
+        <p><strong>Email:</strong> \${user.email}</p>
+        <p><strong>Phone:</strong> \${user.phone}</p>
+      </div>\`;
+      
+      gm.renderWithContent(body);
+    }
+  });
+}`,
+    testCases: [
+      {
+        input: { assigned_to: { name: 'John Doe', email: 'john.doe@example.com', phone: '555-1234' } },
+        expected: { modalTitle: 'User Details', modalContent: 'Name: John Doe, Email: john.doe@example.com, Phone: 555-1234' },
+        description: 'Should open a modal with the correct user details.'
+      },
+      {
+        input: { assigned_to: null },
+        expected: { infoMessage: 'No user is assigned.' },
+        description: 'Should show an info message if no user is assigned.'
+      }
+    ],
+    hints: [
+      'g_form.getReference is asynchronous, so the GlideModal logic must be inside the callback.',
+      'You can construct HTML content as a string to pass to the modal.',
+      'GlideModal provides methods like setTitle() and renderWithContent().'
+    ]
+  },
+  {
+    id: 'sn-glideaggregate-medium-1',
+    title: 'Calculate Average Incident Resolution Time',
+    description: `Write a server-side script to calculate the average resolution time for all resolved incidents in the 'Software' category.
+
+Requirements:
+- Use GlideAggregate to perform the calculation efficiently.
+- Filter incidents for the 'Software' category.
+- Only include incidents that are in the 'Resolved' state.
+- Calculate the average of the 'calendar_stc' field (duration in seconds).
+- Return the average resolution time in hours.
+
+ServiceNow Context:
+- 'calendar_stc' stores the duration of an incident in seconds.
+- Use addQuery() to filter by category and state.
+- Use addAggregate('AVG', 'calendar_stc') to compute the average.
+- Remember to call query() after setting up the GlideAggregate.
+- The result is retrieved using getAggregate().`,
+    difficulty: 'Medium',
+    category: 'Server Side Scripts',
+    tags: ['GlideAggregate', 'GlideRecord', 'Server Script', 'Performance'],
+    starterCode: `function getAverageResolutionTime() {
+  const category = 'Software';
+  const resolvedState = 6; // Assuming 6 is the value for 'Resolved'
+  let averageSeconds = 0;
+
+  // Complete the function using GlideAggregate
+  
+  return averageSeconds / 3600; // Convert seconds to hours
+}`,
+    solution: `function getAverageResolutionTime() {
+  const category = 'Software';
+  const resolvedState = 6;
+  let averageSeconds = 0;
+
+  const ga = new GlideAggregate('incident');
+  ga.addQuery('category', category);
+  ga.addQuery('state', resolvedState);
+  ga.addAggregate('AVG', 'calendar_stc');
+  ga.query();
+
+  if (ga.next()) {
+    averageSeconds = ga.getAggregate('AVG', 'calendar_stc');
+  }
+
+  return averageSeconds / 3600;
+}`,
+    testCases: [
+      {
+        input: [
+          { category: 'Software', state: 6, calendar_stc: 3600 }, // 1 hour
+          { category: 'Software', state: 6, calendar_stc: 7200 }, // 2 hours
+          { category: 'Hardware', state: 6, calendar_stc: 1800 }  // Should be ignored
+        ],
+        expected: 1.5,
+        description: 'Should calculate the average resolution time in hours for Software incidents.'
+      },
+      {
+        input: [],
+        expected: 0,
+        description: 'Should return 0 if no matching incidents are found.'
+      }
+    ],
+    hints: [
+      'GlideAggregate is much more efficient than iterating over a GlideRecord for this purpose.',
+      'The getAggregate() method returns the calculated value.',
+      'Make sure to handle the case where no records match the query.'
+    ]
+  },
+  {
+    id: 'sn-glidedatetime-medium-1',
+    title: 'Calculate Next Business Day',
+    description: `Write a function that takes a date string (YYYY-MM-DD) and returns the next business day, skipping weekends (Saturday and Sunday).
+
+Requirements:
+- Use GlideDateTime to handle date manipulations.
+- The function should correctly handle dates that fall on a Friday or Saturday.
+- The input and output format should be 'YYYY-MM-DD'.
+
+ServiceNow Context:
+- Initialize a GlideDateTime object with the input date string.
+- Use getDayOfWeek() to determine if a date is a weekend (6 for Saturday, 7 for Sunday).
+- Use addDaysUTC() or addDays() to increment the date.
+- Use getDate() to get the date part in 'YYYY-MM-DD' format.`,
+    difficulty: 'Medium',
+    category: 'Server Side Scripts',
+    tags: ['GlideDateTime', 'GlideDate', 'Server Script', 'Scheduling'],
+    starterCode: `function getNextBusinessDay(dateString) {
+  const gdt = new GlideDateTime(dateString);
+
+  // Add logic to find the next business day
+  
+  return gdt.getDate();
+}`,
+    solution: `function getNextBusinessDay(dateString) {
+  const gdt = new GlideDateTime(dateString);
+  gdt.addDaysUTC(1); // Start by checking the next day
+
+  while (gdt.getDayOfWeek() >= 6) { // 6 is Saturday, 7 is Sunday
+    gdt.addDaysUTC(1);
+  }
+
+  return gdt.getDate();
+}`,
+    testCases: [
+      {
+        input: '2025-09-04', // Thursday
+        expected: '2025-09-05', // Friday
+        description: 'Should return the next day for a weekday.'
+      },
+      {
+        input: '2025-09-05', // Friday
+        expected: '2025-09-08', // Monday
+        description: 'Should skip Saturday and Sunday.'
+      },
+      {
+        input: '2025-09-06', // Saturday
+        expected: '2025-09-08', // Monday
+        description: 'Should skip Sunday and return Monday.'
+      }
+    ],
+    hints: [
+      'A while loop is a good way to keep adding days until you find a weekday.',
+      'Remember that getDayOfWeek() returns 1 for Monday and 7 for Sunday.',
+      'Be sure to handle the initial date increment correctly.'
+    ]
+  },
+  {
+    id: 'sn-glidelist-medium-1',
+    title: 'Bulk Update Incidents from List View',
+    description: `Create a client-side UI Action (List Context Menu) to assign selected incidents to the current user.
+
+Requirements:
+- The action should appear in the context menu when one or more rows are selected in an incident list.
+- Use GlideList2 (g_list) to get the sys_ids of the selected records.
+- After getting the sys_ids, use GlideAjax to call a server-side script to perform the update.
+- The server-side script (Script Include) should update the 'assigned_to' field for each incident.
+- After the update, refresh the list to show the changes.
+
+ServiceNow Context:
+- This involves a client-side UI Action and a server-side Script Include.
+- The UI Action uses g_list.getChecked() to get selected sys_ids.
+- The Script Include will have a function that accepts an array of sys_ids and the current user's ID.
+- Use g_list.refresh() to reload the list view.`,
+    difficulty: 'Medium',
+    category: 'Client Side Scripts',
+    tags: ['GlideList', 'GlideAjax', 'UI Action', 'Client Script', 'Script Includes'],
+    starterCode: `// Client-side UI Action script
+function assignToMe() {
+  const selectedIds = g_list.getChecked();
+  if (selectedIds.length === 0) {
+    return;
+  }
+
+  const ga = new GlideAjax('IncidentAssigner');
+  ga.addParam('sysparm_name', 'assignIncidentsToMe');
+  ga.addParam('sysparm_incident_ids', selectedIds.join(','));
+  ga.getXML(refreshList);
+}
+
+function refreshList(response) {
+  g_list.refresh();
+}
+
+// Server-side Script Include 'IncidentAssigner'
+/*
+var IncidentAssigner = Class.create();
+IncidentAssigner.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+  assignIncidentsToMe: function() {
+    const incidentIds = this.getParameter('sysparm_incident_ids').split(',');
+    const userId = gs.getUserID();
+    
+    // Add update logic here
+
+    return 'success';
+  },
+  type: 'IncidentAssigner'
+});
+*/`,
+    solution: `// Server-side Script Include 'IncidentAssigner'
+var IncidentAssigner = Class.create();
+IncidentAssigner.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+  assignIncidentsToMe: function() {
+    const incidentIds = this.getParameter('sysparm_incident_ids').split(',');
+    const userId = gs.getUserID();
+    
+    const incidentGR = new GlideRecord('incident');
+    incidentGR.addQuery('sys_id', 'IN', incidentIds);
+    incidentGR.query();
+    
+    while (incidentGR.next()) {
+      incidentGR.setValue('assigned_to', userId);
+      incidentGR.update();
+    }
+
+    return 'success';
+  },
+  type: 'IncidentAssigner'
+});`,
+    testCases: [
+      {
+        input: { selectedIds: ['id1', 'id2'], userId: 'user123' },
+        expected: { updatedRecords: 2, assignedTo: 'user123' },
+        description: 'Should update the assigned_to field for all selected incidents.'
+      },
+      {
+        input: { selectedIds: [], userId: 'user123' },
+        expected: { updatedRecords: 0 },
+        description: 'Should do nothing if no incidents are selected.'
+      }
+    ],
+    hints: [
+      'The client script is responsible for gathering IDs and calling the server.',
+      'The server script (Script Include) does the actual database work.',
+      "Using an 'IN' query in your GlideRecord is efficient for updating multiple records."
+    ]
+  },
+  {
+    id: 'sn-midserver-medium-1',
+    title: 'Execute PowerShell Command via MID Server',
+    description: `Write a server-side script that sends a PowerShell command to a MID Server to check the disk space on a target Windows machine.
+
+Requirements:
+- Create a record in the ECC Queue (ecc_queue) to trigger the MID Server.
+- The ECC Queue record should specify the 'PowerShell' topic.
+- The payload should contain the command to be executed.
+- The target host and MID Server should be specified.
+- The script should return the sys_id of the created ECC Queue record.
+
+ServiceNow Context:
+- The ECC Queue is the communication channel between a ServiceNow instance and MID Servers.
+- You need to create a new GlideRecord for the 'ecc_queue' table.
+- Key fields to set: 'agent', 'topic', 'name', 'source', 'payload'.
+- The payload is an XML document. You can use a template or build it as a string.`,
+    difficulty: 'Medium',
+    category: 'Server Side Scripts',
+    tags: ['MIDServer', 'ECC Queue', 'PowerShell', 'Server Script'],
+    starterCode: `function checkDiskSpace(targetHost, midServerName) {
+  const command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
+
+  const payload = \`<parameters>
+    <parameter name="skip_sensor" value="true"/>
+    <parameter name="probe_name" value="Windows - PowerShell"/>
+    <parameter name="script.ps1" value="\${command}"/>
+  </parameters>\`;
+
+  const ecc = new GlideRecord('ecc_queue');
+  // Complete the ECC Queue record creation
+  
+  const sysId = ecc.insert();
+  return sysId;
+}`,
+    solution: `function checkDiskSpace(targetHost, midServerName) {
+  const command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
+
+  const payload = \`<parameters>
+    <parameter name="skip_sensor" value="true"/>
+    <parameter name="probe_name" value="Windows - PowerShell"/>
+    <parameter name="script.ps1" value="\${command}"/>
+  </parameters>\`;
+
+  const ecc = new GlideRecord('ecc_queue');
+  ecc.initialize();
+  ecc.agent = 'mid.server.' + midServerName;
+  ecc.topic = 'PowerShell';
+  ecc.name = 'Windows - PowerShell';
+  ecc.source = targetHost;
+  ecc.payload = payload;
+  ecc.queue = 'output';
+  ecc.state = 'ready';
+  
+  const sysId = ecc.insert();
+  return sysId;
+}`,
+    testCases: [
+      {
+        input: { targetHost: 'win-server-01', midServerName: 'mid_server_1' },
+        expected: { agent: 'mid.server.mid_server_1', topic: 'PowerShell', source: 'win-server-01' },
+        description: 'Should create an ECC Queue record with the correct parameters.'
+      }
+    ],
+    hints: [
+      'The agent field must be prefixed with "mid.server.". ',
+      'The payload needs to be a well-formed XML string.',
+      'Setting the queue to "output" and state to "ready" is crucial for the MID server to pick it up.'
+    ]
+  },
+  // ----------------------------------------------------------------
+  // HARD QUESTIONS
+  // ----------------------------------------------------------------
+  {
+    id: 'algo-two-pointer-hard-1',
+    title: 'Find SLA Breach Pairs',
+    description: `Given an array of incident objects, each with an 'sla_breach_time' (as a JavaScript Date object), find all pairs of incidents that breached their SLA within a given time window (in minutes).
+
+Requirements:
+- The input array of incidents is sorted by 'sla_breach_time'.
+- Use the Two Pointer algorithm for an efficient solution.
+- The function should return an array of pairs, where each pair is an array of two incident numbers.
+- Avoid duplicate pairs.
+
+Algorithm Context:
+The Two Pointer technique is used on sorted arrays to find pairs or subarrays that satisfy a certain condition. By moving two pointers from different ends of the array towards each other, you can avoid nested loops and achieve O(n) time complexity.`,
+    difficulty: 'Hard',
+    category: 'Algorithms',
+    tags: ['Two Pointer', 'Algorithms', 'GlideRecord', 'Performance'],
+    starterCode: `function findSlaBreachPairs(incidents, windowMinutes) {
+  const result = [];
+  const windowMillis = windowMinutes * 60 * 1000;
+  let left = 0;
+  let right = 1;
+
+  // Implement the Two Pointer algorithm here
+  
+  return result;
+}`,
+    solution: `function findSlaBreachPairs(incidents, windowMinutes) {
+  const result = [];
+  const windowMillis = windowMinutes * 60 * 1000;
+  
+  if (incidents.length < 2) {
+    return result;
+  }
+
+  for (let i = 0; i < incidents.length; i++) {
+    for (let j = i + 1; j < incidents.length; j++) {
+      const timeDiff = incidents[j].sla_breach_time.getTime() - incidents[i].sla_breach_time.getTime();
+      
+      if (timeDiff <= windowMillis) {
+        result.push([incidents[i].number, incidents[j].number]);
+      } else {
+        // Since the array is sorted, no further incidents with this 'i' will be in the window
+        break;
+      }
+    }
+  }
+  
+  return result;
+}`,
+    testCases: [
+      {
+        input: {
+          incidents: [
+            { number: 'INC001', sla_breach_time: new Date('2025-09-01T10:00:00Z') },
+            { number: 'INC002', sla_breach_time: new Date('2025-09-01T10:05:00Z') },
+            { number: 'INC003', sla_breach_time: new Date('2025-09-01T10:12:00Z') },
+            { number: 'INC004', sla_breach_time: new Date('2025-09-01T10:25:00Z') }
+          ],
+          windowMinutes: 10
+        },
+        expected: [['INC001', 'INC002']],
+        description: 'Should find one pair within the 10-minute window.'
+      },
+      {
+        input: {
+          incidents: [
+            { number: 'INC001', sla_breach_time: new Date('2025-09-01T10:00:00Z') },
+            { number: 'INC002', sla_breach_time: new Date('2025-09-01T10:05:00Z') },
+            { number: 'INC003', sla_breach_time: new Date('2025-09-01T10:08:00Z') }
+          ],
+          windowMinutes: 10
+        },
+        expected: [['INC001', 'INC002'], ['INC001', 'INC003'], ['INC002', 'INC003']],
+        description: 'Should find all pairs within the window.'
+      }
+    ],
+    hints: [
+      'A nested loop is a straightforward but less optimal approach (O(n^2)). The Two Pointer approach can optimize this.',
+      'For each element at pointer \\`i\\`, move pointer \\`j\\` forward until the time difference exceeds the window.',
+      'Since the array is sorted, if the difference between \\`j\\` and \\`i\\` is too large, any subsequent elements after \\`j\\` will also be too large.'
+    ]
+  },
+  {
+    id: 'algo-binary-search-hard-1',
+    title: 'Find CI with Binary Search',
+    description: `You have a very large, sorted array of Configuration Item (CI) names. Implement a function that uses Binary Search to find the index of a specific CI.
+
+Requirements:
+- The input is a sorted array of strings (CI names) and a target CI name.
+- The function must implement the Binary Search algorithm.
+- If the CI is found, return its index.
+- If the CI is not found, return -1.
+- Do not use built-in functions like \`Array.prototype.indexOf\` or \`Array.prototype.find\`.
+
+Algorithm Context:
+Binary Search is a search algorithm that finds the position of a target value within a sorted array. It compares the target value to the middle element of the array; if they are not equal, the half in which the target cannot lie is eliminated and the search continues on the remaining half, again taking the middle element to compare to the target value, and repeating this until the target value is found.`,
+    difficulty: 'Hard',
+    category: 'Algorithms',
+    tags: ['Binary Search', 'Algorithms', 'Performance', 'Data Structures'],
+    starterCode: `function findCiIndex(ciNames, targetName) {
+  let low = 0;
+  let high = ciNames.length - 1;
+
+  // Implement the Binary Search algorithm here
+  
+  return -1; // Return -1 if not found
+}`,
+    solution: `function findCiIndex(ciNames, targetName) {
+  let low = 0;
+  let high = ciNames.length - 1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const guess = ciNames[mid];
+
+    if (guess === targetName) {
+      return mid;
+    }
+    if (guess > targetName) {
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+  
+  return -1;
+}`,
+    testCases: [
+      {
+        input: { ciNames: ['AppServer01', 'DBServer01', 'WebServer01', 'WebServer02'], targetName: 'WebServer01' },
+        expected: 2,
+        description: 'Should return the correct index for a CI that exists.'
+      },
+      {
+        input: { ciNames: ['AppServer01', 'DBServer01', 'WebServer01', 'WebServer02'], targetName: 'EmailServer01' },
+        expected: -1,
+        description: 'Should return -1 for a CI that does not exist.'
+      },
+      {
+        input: { ciNames: [], targetName: 'WebServer01' },
+        expected: -1,
+        description: 'Should return -1 for an empty array.'
+      }
+    ],
+    hints: [
+      'You need three pointers: low, high, and mid.',
+      'The loop should continue as long as low is less than or equal to high.',
+      'In each iteration, adjust either the low or high pointer based on the comparison with the middle element.'
+    ]
+  },
+  {
+    id: 'algo-sliding-window-hard-1',
+    title: 'Max Priority Incidents in a Time Window',
+    description: `Given an array of incident objects, each with a 'created_time' (as a JavaScript Date object) and a 'priority' (1 for Critical), find the maximum number of critical incidents created within any given time window (e.g., 60 minutes).
+
+Requirements:
+- The input array of incidents is sorted by 'created_time'.
+- Use the Sliding Window algorithm for an efficient solution.
+- The function should return a single number representing the maximum count of critical incidents found in any window.
+
+Algorithm Context:
+The Sliding Window technique is used to solve problems that involve finding a sub-array or sub-string that satisfies certain conditions. A window of a fixed or variable size slides over the data, and the algorithm performs calculations on the data within the window.`,
+    difficulty: 'Hard',
+    category: 'Algorithms',
+    tags: ['Sliding Window', 'Algorithms', 'Performance', 'GlideRecord'],
+    starterCode: `function maxCriticalIncidentsInWindow(incidents, windowMinutes) {
+  const windowMillis = windowMinutes * 60 * 1000;
+  let maxCount = 0;
+  let currentCount = 0;
+  let left = 0;
+
+  // Implement the Sliding Window algorithm here
+  
+  return maxCount;
+}`,
+    solution: `function maxCriticalIncidentsInWindow(incidents, windowMinutes) {
+  const windowMillis = windowMinutes * 60 * 1000;
+  let maxCount = 0;
+  let left = 0;
+  
+  for (let right = 0; right < incidents.length; right++) {
+    // As the window expands to the right, check if the new incident is critical
+    const currentIncident = incidents[right];
+    
+    // Shrink the window from the left if it's too large
+    while (currentIncident.created_time.getTime() - incidents[left].created_time.getTime() > windowMillis) {
+      left++;
+    }
+    
+    // Count critical incidents within the current valid window
+    let currentWindowCount = 0;
+    for (let i = left; i <= right; i++) {
+      if (incidents[i].priority === 1) {
+        currentWindowCount++;
+      }
+    }
+    
+    maxCount = Math.max(maxCount, currentWindowCount);
+  }
+  
+  return maxCount;
+}`,
+    testCases: [
+      {
+        input: {
+          incidents: [
+            { created_time: new Date('2025-09-01T10:00:00Z'), priority: 1 },
+            { created_time: new Date('2025-09-01T10:05:00Z'), priority: 2 },
+            { created_time: new Date('2025-09-01T10:15:00Z'), priority: 1 },
+            { created_time: new Date('2025-09-01T11:30:00Z'), priority: 1 }
+          ],
+          windowMinutes: 60
+        },
+        expected: 2,
+        description: 'Should find a max of 2 critical incidents in a 60-minute window.'
+      },
+      {
+        input: {
+          incidents: [
+            { created_time: new Date('2025-09-01T10:00:00Z'), priority: 1 },
+            { created_time: new Date('2025-09-01T10:05:00Z'), priority: 1 },
+            { created_time: new Date('2025-09-01T10:10:00Z'), priority: 1 },
+            { created_time: new Date('2025-09-01T11:00:00Z'), priority: 2 }
+          ],
+          windowMinutes: 15
+        },
+        expected: 3,
+        description: 'Should find all 3 critical incidents in a 15-minute window.'
+      }
+    ],
+    hints: [
+      'Use two pointers, \\`left\\` and \\`right\\`, to define the window.',
+      'Iterate with the \\`right\\` pointer to expand the window.',
+      'When the window size (time difference) exceeds the limit, move the \\`left\\` pointer to shrink it.',
+      'In each valid window, count the critical incidents and update your max count.'
+    ]
+  },
+  {
+    id: 'algo-dfs-bfs-hard-1',
+    title: 'CMDB Dependency Traversal',
+    description: `Write a function that traverses a CMDB dependency graph to find all downstream dependencies for a given Configuration Item (CI).
+
+Requirements:
+- The function takes a starting CI sys_id and a graph representation as input.
+- The graph is an object where keys are CI sys_ids and values are arrays of downstream CI sys_ids they depend on.
+- Use either Depth First Search (DFS) or Breadth First Search (BFS) to traverse the graph.
+- The function should return a flat array of all unique downstream CI sys_ids, excluding the starting CI.
+- Handle cyclical dependencies gracefully to avoid infinite loops.
+
+Algorithm Context:
+DFS and BFS are graph traversal algorithms. DFS explores as far as possible along each branch before backtracking. BFS explores neighbor nodes first, before moving to the next level neighbors. Both are suitable for this problem, but require a way to track visited nodes to prevent infinite loops.`,
+    difficulty: 'Hard',
+    category: 'Algorithms',
+    tags: ['DFS', 'BFS', 'Graph', 'Algorithms', 'CMDB', 'Data Structures'],
+    starterCode: `function getDownstreamDependencies(startCiId, dependencyGraph) {
+  const visited = new Set();
+  const result = [];
+  const queue = [startCiId]; // For BFS
+
+  // Implement either BFS or DFS here
+  
+  return result;
+}`,
+    solution: `// BFS Implementation
+function getDownstreamDependencies(startCiId, dependencyGraph) {
+  const visited = new Set();
+  const result = new Set();
+  const queue = [startCiId];
+  
+  visited.add(startCiId);
+
+  while (queue.length > 0) {
+    const currentCiId = queue.shift();
+    const dependencies = dependencyGraph[currentCiId] || [];
+    
+    for (const depId of dependencies) {
+      if (!visited.has(depId)) {
+        visited.add(depId);
+        result.add(depId);
+        queue.push(depId);
+      }
+    }
+  }
+  
+  return Array.from(result);
+}`,
+    testCases: [
+      {
+        input: {
+          startCiId: 'app_server_1',
+          dependencyGraph: {
+            'app_server_1': ['db_server_1', 'web_server_1'],
+            'db_server_1': ['storage_1'],
+            'web_server_1': ['load_balancer_1'],
+            'storage_1': []
+          }
+        },
+        expected: ['db_server_1', 'web_server_1', 'storage_1', 'load_balancer_1'],
+        description: 'Should return all downstream dependencies.'
+      },
+      {
+        input: {
+          startCiId: 'app_server_1',
+          dependencyGraph: {
+            'app_server_1': ['db_server_1'],
+            'db_server_1': ['app_server_1'] // Cyclical dependency
+          }
+        },
+        expected: ['db_server_1'],
+        description: 'Should handle cyclical dependencies and not get into an infinite loop.'
+      }
+    ],
+    hints: [
+      'Use a Set to keep track of visited nodes to prevent cycles and redundant processing.',
+      'For BFS, use a queue (first-in, first-out). For DFS, you can use a stack (last-in, first-out) or recursion.',
+      'Start the traversal with the given CI, but do not include it in the final result set.'
+    ]
+  }
 ];

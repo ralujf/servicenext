@@ -12,6 +12,7 @@ import { Toaster } from './components/ui/sonner';
 import { mockQuestions, Question } from './data/questions-clean';
 import { progressService, ProgressStats, UserProgress } from './utils/progressService';
 import { bookmarkService } from './utils/bookmarkService';
+import { usePageView } from './hooks/usePageView';
 import { Loader2 } from 'lucide-react';
 
 function AppContent() {
@@ -24,6 +25,9 @@ function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState<string[]>([]);
   const [isShowingBookmarked, setIsShowingBookmarked] = useState(false);
+  
+  // Page metadata management
+  const { navigateToView, updateCurrentMetadata } = usePageView('practice');
   
   // Load user progress and bookmarks when user logs in
   useEffect(() => {
@@ -98,6 +102,25 @@ function AppContent() {
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
+    
+    // Update page metadata based on the new tab
+    switch (tab) {
+      case 'practice':
+        navigateToView('practice');
+        break;
+      case 'progress':
+        navigateToView('progress');
+        break;
+      case 'resources':
+        navigateToView('resources');
+        break;
+      case 'auth':
+        navigateToView('auth');
+        break;
+      default:
+        navigateToView('practice');
+    }
+    
     // Clear selected question when switching tabs
     if (tab !== 'practice') {
       setSelectedQuestion(null);
@@ -108,12 +131,16 @@ function AppContent() {
     setSelectedQuestion(question);
     // Switch to practice tab when selecting a question
     setCurrentTab('practice');
+    // Update metadata for the specific question
+    navigateToView('question', { title: question.title });
   };
 
   const handleLogoClick = () => {
     // Go to main practice page
     setCurrentTab('practice');
     setSelectedQuestion(null);
+    // Update metadata back to practice view
+    navigateToView('practice');
   };
 
   const handleCategorySelect = (category: string | null) => {
@@ -224,7 +251,10 @@ function AppContent() {
               userProgress={userProgress}
               questions={filteredQuestions}
               onNavigateToQuestion={handleQuestionSelect}
-              onBackToQuestions={() => setSelectedQuestion(null)}
+              onBackToQuestions={() => {
+                setSelectedQuestion(null);
+                navigateToView('practice');
+              }}
               bookmarkedQuestions={bookmarkedQuestions}
               onBookmarkToggle={handleBookmarkToggle}
             />
@@ -311,7 +341,7 @@ function AppContent() {
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold" style={{ fontFamily: 'Chivo, sans-serif' }}>Your Progress</h2>
-            <ProgressTracker stats={progressStats} />
+            {progressStats && <ProgressTracker stats={progressStats} />}
           </div>
         );
       
