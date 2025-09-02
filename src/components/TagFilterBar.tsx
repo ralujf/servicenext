@@ -165,7 +165,7 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
       'Parsing': 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-300 hover:bg-lime-200 dark:hover:bg-lime-800'
     };
 
-    return colors[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+    return colors[tag] || 'bg-slate-200 text-slate-800 dark:bg-slate-600 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500';
   };
 
   const getSelectedTagColor = (tag: string) => {
@@ -195,7 +195,7 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
       'API': 'bg-blue-600 text-white hover:bg-blue-700'
     };
 
-    return colors[tag] || 'bg-gray-600 text-white hover:bg-gray-700';
+    return colors[tag] || 'bg-slate-700 text-white hover:bg-slate-800 dark:bg-slate-500 dark:hover:bg-slate-400';
   };
 
   if (allTags.length === 0) {
@@ -236,12 +236,14 @@ export function TagFilterBar({ questions, selectedTags, onTagSelect, onTagRemove
           {allTags.map(tag => (
             <Badge
               key={tag}
-              variant="default"
-              className={`cursor-pointer transition-colors ${getSelectedTagColor(tag)} text-xs`}
-              onClick={() => onTagRemove(tag)}
+              variant={selectedTags.includes(tag) ? 'default' : 'secondary'}
+              className={`cursor-pointer transition-colors ${
+                selectedTags.includes(tag) ? getSelectedTagColor(tag) : getTagColor(tag)
+              } text-xs`}
+              onClick={() => selectedTags.includes(tag) ? onTagRemove(tag) : onTagSelect(tag)}
             >
               {tag}
-              <X className="ml-1 h-3 w-3" />
+              {selectedTags.includes(tag) && <X className="ml-1 h-3 w-3" />}
             </Badge>
           ))}
         </div>
