@@ -48,6 +48,10 @@ export function Navbar({ currentTab = 'practice', onTabChange, userStreak = 0, o
               alt="ServiceNext Logo"
               className="w-8 h-8 rounded-lg object-contain"
             />
+            <h3
+             className="text-2xl font-semibold"
+             style={{ fontFamily: 'Chivo, sans-serif' }}
+            >ServiceNext</h3>
           </div>
 
           {/* Navigation Tabs - Show for all users */}
