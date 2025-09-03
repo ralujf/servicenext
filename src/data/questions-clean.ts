@@ -27,7 +27,7 @@ export interface Question {
   estimatedTime?: string;
 }
 
-export const mockQuestions: Question[] = [
+export var mockQuestions: Question[] = [
   // ServiceNow Core Questions
   {
     id: 'sn-gliderecord-1',
@@ -51,19 +51,19 @@ ServiceNow Context:
     tags: ['GlideRecord', 'ServiceNow', 'Database Query', 'Date Filtering'],
     starterCode: `function getHighPriorityIncidents() {
     // Your code here
-    const incidents = [];
+    var incidents = [];
     
     return incidents;
 }`,
     solution: `function getHighPriorityIncidents() {
-    const incidents = [];
-    const gr = new GlideRecord('incident');
+    var incidents = [];
+    var gr = new GlideRecord('incident');
     
     // Filter for high priority incidents (1 and 2)
     gr.addQuery('priority', 'IN', '1,2');
     
     // Filter for last 7 days
-    const sevenDaysAgo = new Date();
+    var sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     gr.addQuery('sys_created_on', '>=', sevenDaysAgo.toISOString().split('T')[0]);
     
@@ -127,8 +127,8 @@ ServiceNow Context:
     
 }`,
     solution: `function autoAssignByCategory() {
-    const category = current.getValue('category');
-    let assignmentGroup = '';
+    var category = current.getValue('category');
+    var assignmentGroup = '';
     
     switch (category) {
         case 'Hardware':
@@ -189,8 +189,8 @@ ServiceNow Context:
     
 }`,
     solution: `function validateDescription() {
-    const description = g_form.getValue('short_description');
-    let isValid = true;
+    var description = g_form.getValue('short_description');
+    var isValid = true;
     
     // Check minimum length
     if (!description || description.length < 10) {
@@ -251,9 +251,19 @@ Use JavaScript array methods to efficiently process the user data and return the
         return [];
     }
     
-    return users
-        .filter(user => user.active === true)
-        .sort((a, b) => a.firstName.localeCompare(b.firstName));
+    var activeUsers = [];
+    for (var i = 0; i < users.length; i++) {
+        if (users[i].active === true) {
+            activeUsers.push(users[i]);
+        }
+    }
+    
+    // Sort by firstName
+    activeUsers.sort(function(a, b) {
+        return a.firstName.localeCompare(b.firstName);
+    });
+    
+    return activeUsers;
 }`,
     testCases: [
       {
@@ -305,10 +315,11 @@ Use efficient iteration patterns to process the data in a single pass where poss
         return {};
     }
     
-    const stats = {};
+    var stats = {};
     
-    employees.forEach(emp => {
-        const dept = emp.department;
+    for (var i = 0; i < employees.length; i++) {
+        var emp = employees[i];
+        var dept = emp.department;
         if (!stats[dept]) {
             stats[dept] = {
                 count: 0,
@@ -323,12 +334,14 @@ Use efficient iteration patterns to process the data in a single pass where poss
         if (emp.salary > stats[dept].highestPaid.salary) {
             stats[dept].highestPaid = emp;
         }
-    });
+    }
     
     // Calculate averages
-    Object.keys(stats).forEach(dept => {
-        stats[dept].averageSalary = Math.round(stats[dept].totalSalary / stats[dept].count);
-    });
+    var deptKeys = Object.keys(stats);
+    for (var j = 0; j < deptKeys.length; j++) {
+        var deptName = deptKeys[j];
+        stats[deptName].averageSalary = Math.round(stats[deptName].totalSalary / stats[deptName].count);
+    }
     
     return stats;
 }`,
@@ -382,18 +395,27 @@ Performance Goals:
     
     return [];
 }`,
-    solution: `function processLargeArray(data, processor, batchSize = 100) {
+    solution: `function processLargeArray(data, processor, batchSize) {
+    if (typeof batchSize === 'undefined') {
+        batchSize = 100;
+    }
+    
     if (!data || !Array.isArray(data)) {
         return [];
     }
     
-    const results = [];
-    const totalItems = data.length;
+    var results = [];
+    var totalItems = data.length;
     
-    for (let i = 0; i < totalItems; i += batchSize) {
-        const batch = data.slice(i, i + batchSize);
-        const batchResults = batch.map(processor);
-        results.push(...batchResults);
+    for (var i = 0; i < totalItems; i += batchSize) {
+        var batch = data.slice(i, i + batchSize);
+        var batchResults = [];
+        for (var j = 0; j < batch.length; j++) {
+            batchResults.push(processor(batch[j]));
+        }
+        for (var k = 0; k < batchResults.length; k++) {
+            results.push(batchResults[k]);
+        }
         
         // Yield control to prevent timeouts in ServiceNow
         if (i + batchSize < totalItems) {
@@ -406,7 +428,7 @@ Performance Goals:
 }`,
     testCases: [
       {
-        input: { data: [1, 2, 3, 4, 5], processor: x => x * 2, batchSize: 2 },
+        input: { data: [1, 2, 3, 4, 5], processor: function(x) { return x * 2; }, batchSize: 2 },
         expected: [2, 4, 6, 8, 10],
         description: 'Should process array in batches'
       }
@@ -1642,22 +1664,57 @@ Pipeline Benefits:
         return [];
     }
     
-    return users
-        .filter(user => user.active && user.roles && user.roles.length > 0)
-        .map(user => ({
-            ...user,
-            fullName: (user.firstName + ' ' + user.lastName).trim(),
-            roleCount: user.roles.length,
-            isAdmin: user.roles.includes('admin')
-        }))
-        .sort((a, b) => {
-            // Sort by admin status first, then by role count
-            if (a.isAdmin !== b.isAdmin) {
-                return b.isAdmin - a.isAdmin;
+    // Step 1: Filter active users with roles
+    var filteredUsers = [];
+    for (var i = 0; i < users.length; i++) {
+        var user = users[i];
+        if (user.active && user.roles && user.roles.length > 0) {
+            filteredUsers.push(user);
+        }
+    }
+    
+    // Step 2: Map to enhanced user objects
+    var mappedUsers = [];
+    for (var j = 0; j < filteredUsers.length; j++) {
+        var user = filteredUsers[j];
+        var fullName = (user.firstName + ' ' + user.lastName).trim();
+        var roleCount = user.roles.length;
+        var isAdmin = false;
+        for (var k = 0; k < user.roles.length; k++) {
+            if (user.roles[k] === 'admin') {
+                isAdmin = true;
+                break;
             }
-            return b.roleCount - a.roleCount;
-        })
-        .slice(0, 10); // Limit to top 10 users
+        }
+        
+        mappedUsers.push({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            active: user.active,
+            roles: user.roles,
+            fullName: fullName,
+            roleCount: roleCount,
+            isAdmin: isAdmin
+        });
+    }
+    
+    // Step 3: Sort by admin status first, then by role count
+    mappedUsers.sort(function(a, b) {
+        // Sort by admin status first, then by role count
+        if (a.isAdmin !== b.isAdmin) {
+            return b.isAdmin - a.isAdmin;
+        }
+        return b.roleCount - a.roleCount;
+    });
+    
+    // Step 4: Limit to top 10 users
+    var result = [];
+    var limit = Math.min(10, mappedUsers.length);
+    for (var l = 0; l < limit; l++) {
+        result.push(mappedUsers[l]);
+    }
+    
+    return result;
 }`,
     testCases: [
       {
@@ -1711,11 +1768,22 @@ Grouping Applications:
         return {};
     }
     
-    return array.reduce((groups, item) => {
+    var groups = {};
+    
+    for (var i = 0; i < array.length; i++) {
+        var item = array[i];
+        
         // Handle nested property paths (e.g., 'user.department')
-        var key = keyPath.split('.').reduce((obj, prop) => {
-            return obj && obj[prop];
-        }, item);
+        var pathParts = keyPath.split('.');
+        var key = item;
+        for (var j = 0; j < pathParts.length; j++) {
+            if (key && key[pathParts[j]]) {
+                key = key[pathParts[j]];
+            } else {
+                key = undefined;
+                break;
+            }
+        }
         
         // Handle undefined or null keys
         key = key !== undefined && key !== null ? key : 'undefined';
@@ -1726,8 +1794,9 @@ Grouping Applications:
         }
         
         groups[key].push(item);
-        return groups;
-    }, {});
+    }
+    
+    return groups;
 }`,
     testCases: [
       {
@@ -1904,25 +1973,50 @@ Set Operations Use Cases:
     
     if (operation === 'intersection') {
         // Find elements common to all arrays
-        return arrays[0].filter(item => {
-            return arrays.slice(1).every(array => {
-                return array.some(otherItem => isEqual(item, otherItem));
-            });
-        });
+        var result = [];
+        for (var i = 0; i < arrays[0].length; i++) {
+            var item = arrays[0][i];
+            var isCommon = true;
+            
+            for (var j = 1; j < arrays.length; j++) {
+                var foundInArray = false;
+                for (var k = 0; k < arrays[j].length; k++) {
+                    if (isEqual(item, arrays[j][k])) {
+                        foundInArray = true;
+                        break;
+                    }
+                }
+                if (!foundInArray) {
+                    isCommon = false;
+                    break;
+                }
+            }
+            
+            if (isCommon) {
+                result.push(item);
+            }
+        }
+        return result;
     } else if (operation === 'union') {
         // Combine all arrays and remove duplicates
         var combined = [];
         
-        arrays.forEach(array => {
-            array.forEach(item => {
-                var exists = combined.some(existingItem => 
-                    isEqual(item, existingItem)
-                );
+        for (var l = 0; l < arrays.length; l++) {
+            var array = arrays[l];
+            for (var m = 0; m < array.length; m++) {
+                var item = array[m];
+                var exists = false;
+                for (var n = 0; n < combined.length; n++) {
+                    if (isEqual(item, combined[n])) {
+                        exists = true;
+                        break;
+                    }
+                }
                 if (!exists) {
                     combined.push(item);
                 }
-            });
-        });
+            }
+        }
         
         return combined;
     }
@@ -1988,7 +2082,7 @@ ServiceNow Context:
   }
 
   // Complete the function logic here
-  // const g_form = /* Assume g_form is available */
+  // var g_form = /* Assume g_form is available */
   
 }`,
     solution: `function onChange(control, oldValue, newValue, isLoading, isTemplate) {
@@ -1996,7 +2090,7 @@ ServiceNow Context:
     return;
   }
 
-  const riskValue = g_form.getValue('risk');
+  var riskValue = g_form.getValue('risk');
   
   if (riskValue === 'High') {
     g_form.setVisible('justification', true);
@@ -2050,7 +2144,7 @@ ServiceNow Context:
     category: 'Client Side Scripts',
     tags: ['GlideModal', 'UI Action', 'GlideForm', 'Client Script'],
     starterCode: `function showUserDetails() {
-  const assignedToSysId = g_form.getValue('assigned_to');
+  var assignedToSysId = g_form.getValue('assigned_to');
   if (!assignedToSysId) {
     g_form.addInfoMessage('No user is assigned.');
     return;
@@ -2060,22 +2154,22 @@ ServiceNow Context:
   
 }`,
     solution: `function showUserDetails() {
-  const assignedToSysId = g_form.getValue('assigned_to');
+  var assignedToSysId = g_form.getValue('assigned_to');
   if (!assignedToSysId) {
     g_form.addInfoMessage('No user is assigned.');
     return;
   }
 
-  g_form.getReference('assigned_to', (user) => {
+  g_form.getReference('assigned_to', function(user) {
     if (user) {
-      const gm = new GlideModal();
+      var gm = new GlideModal();
       gm.setTitle('User Details');
       
-      const body = \`<div>
-        <p><strong>Name:</strong> \${user.name}</p>
-        <p><strong>Email:</strong> \${user.email}</p>
-        <p><strong>Phone:</strong> \${user.phone}</p>
-      </div>\`;
+      var body = '<div>' +
+        '<p><strong>Name:</strong> ' + user.name + '</p>' +
+        '<p><strong>Email:</strong> ' + user.email + '</p>' +
+        '<p><strong>Phone:</strong> ' + user.phone + '</p>' +
+      '</div>';
       
       gm.renderWithContent(body);
     }
@@ -2121,20 +2215,20 @@ ServiceNow Context:
     category: 'Server Side Scripts',
     tags: ['GlideAggregate', 'GlideRecord', 'Server Script', 'Performance'],
     starterCode: `function getAverageResolutionTime() {
-  const category = 'Software';
-  const resolvedState = 6; // Assuming 6 is the value for 'Resolved'
-  let averageSeconds = 0;
+  var category = 'Software';
+  var resolvedState = 6; // Assuming 6 is the value for 'Resolved'
+  var averageSeconds = 0;
 
   // Complete the function using GlideAggregate
   
   return averageSeconds / 3600; // Convert seconds to hours
 }`,
     solution: `function getAverageResolutionTime() {
-  const category = 'Software';
-  const resolvedState = 6;
-  let averageSeconds = 0;
+  var category = 'Software';
+  var resolvedState = 6;
+  var averageSeconds = 0;
 
-  const ga = new GlideAggregate('incident');
+  var ga = new GlideAggregate('incident');
   ga.addQuery('category', category);
   ga.addQuery('state', resolvedState);
   ga.addAggregate('AVG', 'calendar_stc');
@@ -2187,14 +2281,14 @@ ServiceNow Context:
     category: 'Server Side Scripts',
     tags: ['GlideDateTime', 'GlideDate', 'Server Script', 'Scheduling'],
     starterCode: `function getNextBusinessDay(dateString) {
-  const gdt = new GlideDateTime(dateString);
+  var gdt = new GlideDateTime(dateString);
 
   // Add logic to find the next business day
   
   return gdt.getDate();
 }`,
     solution: `function getNextBusinessDay(dateString) {
-  const gdt = new GlideDateTime(dateString);
+  var gdt = new GlideDateTime(dateString);
   gdt.addDaysUTC(1); // Start by checking the next day
 
   while (gdt.getDayOfWeek() >= 6) { // 6 is Saturday, 7 is Sunday
@@ -2248,12 +2342,12 @@ ServiceNow Context:
     tags: ['GlideList', 'GlideAjax', 'UI Action', 'Client Script', 'Script Includes'],
     starterCode: `// Client-side UI Action script
 function assignToMe() {
-  const selectedIds = g_list.getChecked();
+  var selectedIds = g_list.getChecked();
   if (selectedIds.length === 0) {
     return;
   }
 
-  const ga = new GlideAjax('IncidentAssigner');
+  var ga = new GlideAjax('IncidentAssigner');
   ga.addParam('sysparm_name', 'assignIncidentsToMe');
   ga.addParam('sysparm_incident_ids', selectedIds.join(','));
   ga.getXML(refreshList);
@@ -2268,8 +2362,8 @@ function refreshList(response) {
 var IncidentAssigner = Class.create();
 IncidentAssigner.prototype = Object.extendsObject(AbstractAjaxProcessor, {
   assignIncidentsToMe: function() {
-    const incidentIds = this.getParameter('sysparm_incident_ids').split(',');
-    const userId = gs.getUserID();
+    var incidentIds = this.getParameter('sysparm_incident_ids').split(',');
+    var userId = gs.getUserID();
     
     // Add update logic here
 
@@ -2282,10 +2376,10 @@ IncidentAssigner.prototype = Object.extendsObject(AbstractAjaxProcessor, {
 var IncidentAssigner = Class.create();
 IncidentAssigner.prototype = Object.extendsObject(AbstractAjaxProcessor, {
   assignIncidentsToMe: function() {
-    const incidentIds = this.getParameter('sysparm_incident_ids').split(',');
-    const userId = gs.getUserID();
+    var incidentIds = this.getParameter('sysparm_incident_ids').split(',');
+    var userId = gs.getUserID();
     
-    const incidentGR = new GlideRecord('incident');
+    var incidentGR = new GlideRecord('incident');
     incidentGR.addQuery('sys_id', 'IN', incidentIds);
     incidentGR.query();
     
@@ -2337,30 +2431,30 @@ ServiceNow Context:
     category: 'Server Side Scripts',
     tags: ['MIDServer', 'ECC Queue', 'PowerShell', 'Server Script'],
     starterCode: `function checkDiskSpace(targetHost, midServerName) {
-  const command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
+  var command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
 
-  const payload = \`<parameters>
-    <parameter name="skip_sensor" value="true"/>
-    <parameter name="probe_name" value="Windows - PowerShell"/>
-    <parameter name="script.ps1" value="\${command}"/>
-  </parameters>\`;
+  var payload = '<parameters>' +
+    '<parameter name="skip_sensor" value="true"/>' +
+    '<parameter name="probe_name" value="Windows - PowerShell"/>' +
+    '<parameter name="script.ps1" value="' + command + '"/>' +
+  '</parameters>';
 
-  const ecc = new GlideRecord('ecc_queue');
+  var ecc = new GlideRecord('ecc_queue');
   // Complete the ECC Queue record creation
   
-  const sysId = ecc.insert();
+  var sysId = ecc.insert();
   return sysId;
 }`,
     solution: `function checkDiskSpace(targetHost, midServerName) {
-  const command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
+  var command = 'Get-WmiObject Win32_LogicalDisk -Filter "DeviceID=\\\'C:\\\'" | Select-Object Size,FreeSpace';
 
-  const payload = \`<parameters>
-    <parameter name="skip_sensor" value="true"/>
-    <parameter name="probe_name" value="Windows - PowerShell"/>
-    <parameter name="script.ps1" value="\${command}"/>
-  </parameters>\`;
+  var payload = '<parameters>' +
+    '<parameter name="skip_sensor" value="true"/>' +
+    '<parameter name="probe_name" value="Windows - PowerShell"/>' +
+    '<parameter name="script.ps1" value="' + command + '"/>' +
+  '</parameters>';
 
-  const ecc = new GlideRecord('ecc_queue');
+  var ecc = new GlideRecord('ecc_queue');
   ecc.initialize();
   ecc.agent = 'mid.server.' + midServerName;
   ecc.topic = 'PowerShell';
@@ -2370,7 +2464,7 @@ ServiceNow Context:
   ecc.queue = 'output';
   ecc.state = 'ready';
   
-  const sysId = ecc.insert();
+  var sysId = ecc.insert();
   return sysId;
 }`,
     testCases: [
@@ -2406,26 +2500,26 @@ The Two Pointer technique is used on sorted arrays to find pairs or subarrays th
     category: 'Algorithms',
     tags: ['Two Pointer', 'Algorithms', 'GlideRecord', 'Performance'],
     starterCode: `function findSlaBreachPairs(incidents, windowMinutes) {
-  const result = [];
-  const windowMillis = windowMinutes * 60 * 1000;
-  let left = 0;
-  let right = 1;
+  var result = [];
+  var windowMillis = windowMinutes * 60 * 1000;
+  var left = 0;
+  var right = 1;
 
   // Implement the Two Pointer algorithm here
   
   return result;
 }`,
     solution: `function findSlaBreachPairs(incidents, windowMinutes) {
-  const result = [];
-  const windowMillis = windowMinutes * 60 * 1000;
+  var result = [];
+  var windowMillis = windowMinutes * 60 * 1000;
   
   if (incidents.length < 2) {
     return result;
   }
 
-  for (let i = 0; i < incidents.length; i++) {
-    for (let j = i + 1; j < incidents.length; j++) {
-      const timeDiff = incidents[j].sla_breach_time.getTime() - incidents[i].sla_breach_time.getTime();
+  for (var i = 0; i < incidents.length; i++) {
+    for (var j = i + 1; j < incidents.length; j++) {
+      var timeDiff = incidents[j].sla_breach_time.getTime() - incidents[i].sla_breach_time.getTime();
       
       if (timeDiff <= windowMillis) {
         result.push([incidents[i].number, incidents[j].number]);
@@ -2489,20 +2583,20 @@ Binary Search is a search algorithm that finds the position of a target value wi
     category: 'Algorithms',
     tags: ['Binary Search', 'Algorithms', 'Performance', 'Data Structures'],
     starterCode: `function findCiIndex(ciNames, targetName) {
-  let low = 0;
-  let high = ciNames.length - 1;
+  var low = 0;
+  var high = ciNames.length - 1;
 
   // Implement the Binary Search algorithm here
   
   return -1; // Return -1 if not found
 }`,
     solution: `function findCiIndex(ciNames, targetName) {
-  let low = 0;
-  let high = ciNames.length - 1;
+  var low = 0;
+  var high = ciNames.length - 1;
 
   while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    const guess = ciNames[mid];
+    var mid = Math.floor((low + high) / 2);
+    var guess = ciNames[mid];
 
     if (guess === targetName) {
       return mid;
@@ -2555,23 +2649,23 @@ The Sliding Window technique is used to solve problems that involve finding a su
     category: 'Algorithms',
     tags: ['Sliding Window', 'Algorithms', 'Performance', 'GlideRecord'],
     starterCode: `function maxCriticalIncidentsInWindow(incidents, windowMinutes) {
-  const windowMillis = windowMinutes * 60 * 1000;
-  let maxCount = 0;
-  let currentCount = 0;
-  let left = 0;
+  var windowMillis = windowMinutes * 60 * 1000;
+  var maxCount = 0;
+  var currentCount = 0;
+  var left = 0;
 
   // Implement the Sliding Window algorithm here
   
   return maxCount;
 }`,
     solution: `function maxCriticalIncidentsInWindow(incidents, windowMinutes) {
-  const windowMillis = windowMinutes * 60 * 1000;
-  let maxCount = 0;
-  let left = 0;
+  var windowMillis = windowMinutes * 60 * 1000;
+  var maxCount = 0;
+  var left = 0;
   
-  for (let right = 0; right < incidents.length; right++) {
+  for (var right = 0; right < incidents.length; right++) {
     // As the window expands to the right, check if the new incident is critical
-    const currentIncident = incidents[right];
+    var currentIncident = incidents[right];
     
     // Shrink the window from the left if it's too large
     while (currentIncident.created_time.getTime() - incidents[left].created_time.getTime() > windowMillis) {
@@ -2579,8 +2673,8 @@ The Sliding Window technique is used to solve problems that involve finding a su
     }
     
     // Count critical incidents within the current valid window
-    let currentWindowCount = 0;
-    for (let i = left; i <= right; i++) {
+    var currentWindowCount = 0;
+    for (var i = left; i <= right; i++) {
       if (incidents[i].priority === 1) {
         currentWindowCount++;
       }
@@ -2644,9 +2738,9 @@ DFS and BFS are graph traversal algorithms. DFS explores as far as possible alon
     category: 'Algorithms',
     tags: ['DFS', 'BFS', 'Graph', 'Algorithms', 'CMDB', 'Data Structures'],
     starterCode: `function getDownstreamDependencies(startCiId, dependencyGraph) {
-  const visited = new Set();
-  const result = [];
-  const queue = [startCiId]; // For BFS
+  var visited = {};
+  var result = [];
+  var queue = [startCiId]; // For BFS
 
   // Implement either BFS or DFS here
   
@@ -2654,26 +2748,29 @@ DFS and BFS are graph traversal algorithms. DFS explores as far as possible alon
 }`,
     solution: `// BFS Implementation
 function getDownstreamDependencies(startCiId, dependencyGraph) {
-  const visited = new Set();
-  const result = new Set();
-  const queue = [startCiId];
+  var visited = {};
+  var result = {};
+  var resultArray = [];
+  var queue = [startCiId];
   
-  visited.add(startCiId);
+  visited[startCiId] = true;
 
   while (queue.length > 0) {
-    const currentCiId = queue.shift();
-    const dependencies = dependencyGraph[currentCiId] || [];
+    var currentCiId = queue.shift();
+    var dependencies = dependencyGraph[currentCiId] || [];
     
-    for (const depId of dependencies) {
-      if (!visited.has(depId)) {
-        visited.add(depId);
-        result.add(depId);
+    for (var i = 0; i < dependencies.length; i++) {
+      var depId = dependencies[i];
+      if (!visited[depId]) {
+        visited[depId] = true;
+        result[depId] = true;
+        resultArray.push(depId);
         queue.push(depId);
       }
     }
   }
   
-  return Array.from(result);
+  return resultArray;
 }`,
     testCases: [
       {

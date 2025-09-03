@@ -121,8 +121,8 @@ function AppContent() {
         navigateToView('practice');
     }
     
-    // Clear selected question when switching tabs
-    if (tab !== 'practice') {
+    // Clear selected question when switching tabs or when clicking Practice while viewing a question
+    if (tab !== 'practice' || (tab === 'practice' && selectedQuestion)) {
       setSelectedQuestion(null);
     }
   };

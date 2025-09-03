@@ -254,6 +254,114 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
     setCode(value || '');
   };
 
+  const configureMonacoEditor = (monaco: any) => {
+    try {
+      // Check if Monaco and required services are available
+      if (!monaco || !monaco.languages || !monaco.languages.typescript) {
+        console.warn('Monaco TypeScript service not available yet');
+        return;
+      }
+
+      // Add ServiceNow type definitions for better IntelliSense
+      const serviceNowTypes = `
+        declare class GlideRecord {
+          constructor(tableName: string);
+          addQuery(field: string, value: any): void;
+          addQuery(field: string, operator: string, value: any): void;
+          query(): void;
+          next(): boolean;
+          getValue(field: string): string;
+          getDisplayValue(field: string): string;
+          setValue(field: string, value: any): void;
+          update(): string;
+          insert(): string;
+          deleteRecord(): boolean;
+          get(sysId: string): boolean;
+          addOrderBy(field: string): void;
+          addOrderByDesc(field: string): void;
+          setLimit(limit: number): void;
+          getRowCount(): number;
+          hasNext(): boolean;
+          isValid(): boolean;
+          sys_id: string;
+          [field: string]: any;
+        }
+
+        declare const gs: {
+          log(message: string, source?: string): void;
+          info(message: string, source?: string): void;
+          warn(message: string, source?: string): void;
+          error(message: string, source?: string): void;
+          debug(message: string, source?: string): void;
+          getUser(): any;
+          getUserID(): string;
+          getUserName(): string;
+          hasRole(role: string): boolean;
+          nil(value: any): boolean;
+          addInfoMessage(message: string): void;
+          addErrorMessage(message: string): void;
+        };
+
+        declare const g_form: {
+          getValue(field: string): any;
+          setValue(field: string, value: any): void;
+          showFieldMsg(field: string, message: string, type: string): void;
+          hideFieldMsg(field: string): void;
+          addOption(field: string, value: string, label: string): void;
+          clearOptions(field: string): void;
+        };
+
+        declare const current: {
+          getValue(field: string): any;
+          setValue(field: string, value: any): void;
+          update(): void;
+          [field: string]: any;
+        };
+      `;
+
+      // Add the extra library to Monaco
+      if (monaco.languages.typescript.javascriptDefaults) {
+        monaco.languages.typescript.javascriptDefaults.addExtraLib(
+          serviceNowTypes,
+          'servicenow.d.ts'
+        );
+
+        // Configure JavaScript/TypeScript compiler options for ES5
+        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+          target: monaco.languages.typescript.ScriptTarget.ES5, // Force ES5 target
+          allowNonTsExtensions: true,
+          moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+          module: monaco.languages.typescript.ModuleKind.CommonJS,
+          noEmit: true,
+          esModuleInterop: false, // Disable ES6 module features
+          jsx: monaco.languages.typescript.JsxEmit.React,
+          reactNamespace: 'React',
+          allowJs: true,
+          strict: true, // Enable strict mode for better error checking
+          noImplicitAny: false,
+          strictNullChecks: false,
+          // ES5-specific settings
+          lib: ["ES5", "DOM"], // Only allow ES5 and DOM APIs
+          downlevelIteration: false, // Disable ES6 iteration features
+        });
+
+        // Configure diagnostics to show ES5 violations as errors
+        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: false,
+          noSyntaxValidation: false,
+          noSuggestionDiagnostics: false,
+          diagnosticCodesToIgnore: [
+            // Allow these specific codes
+            1108, // 'return' statement not in function
+            2304, // Cannot find name (for our custom globals)
+          ]
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to configure Monaco Editor:', error);
+    }
+  };
+
   const totalHints = safeQuestion.hints.length;
   const hasMoreHints = revealedHints < totalHints;
 
@@ -641,6 +749,7 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
                     theme={actualTheme === 'dark' ? 'vs-dark' : 'light'}
                     value={code}
                     onChange={handleEditorChange}
+                    onMount={configureMonacoEditor}
                     options={{
                       fontSize: 14,
                       minimap: { enabled: false },
@@ -650,6 +759,24 @@ export function QuestionDetail({ question, onQuestionComplete, userProgress, que
                         horizontalScrollbarSize: 10,
                       },
                       fontFamily: 'Chivo, monospace',
+                      suggest: {
+                        showKeywords: true,
+                        showSnippets: true,
+                        showClasses: true,
+                        showFunctions: true,
+                        showConstants: true,
+                        showModules: true,
+                        showProperties: true,
+                        showMethods: true,
+                      },
+                      quickSuggestions: {
+                        other: true,
+                        comments: false,
+                        strings: false
+                      },
+                      acceptSuggestionOnCommitCharacter: true,
+                      acceptSuggestionOnEnter: "on",
+                      accessibilitySupport: "auto"
                     }}
                   />
                 </div>
